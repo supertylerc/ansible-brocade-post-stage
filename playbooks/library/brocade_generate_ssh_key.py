@@ -10,11 +10,6 @@ description:
 author: Will McLendon
 '''
 
-
-import logging
-from pexpect import spawn
-from time import sleep
-
 EXAMPLES = '''
 # Example Playbook:
 ---
@@ -49,6 +44,10 @@ EXAMPLES = '''
          password="{{ password }}"
          logfileDirectory="{{ logfileDirectory }}"
 '''
+
+import logging
+from pexpect import spawn
+from time import sleep
 
 
 def login(**config):
