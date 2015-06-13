@@ -51,29 +51,35 @@ EXAMPLES = '''
 '''
 
 
+def login(**config):
+    hostname = config.get('hostname')
+    username = config.get('username')
+    password = config.get('password')
+    logfile = config.get('logfile')
+    brcd_switch = spawn('telnet ' + hostname)
+    brcd_switch.logfile = open(logfile, 'w')
+    brcd_switch.expect('.*ogin Name:.*')
+    brcd_switch.sendline(username)
+    brcd_switch.expect('.*assword:.*')
+    brcd_switch.sendline(password)
+    brcd_switch.expect('.*#.*')
+    logging.info('Logged into ' + hostname + ', executing crypto key generate')
+    return brcd_switch
+
+
 def brocade_generate_ssh_key(module):
     hostname = module.params['host']
-    username = module.params['username']
-    password = module.params['password']
-
-    # For now the log file is mandatory and always created for debugging and verification.
-    # To do list includes making it optional
-    # It looks like since Ansible copies the script into a temp folder the absolute path is required for the directory
-    # There is probably a more "ansible" way set a directory but this works ok for now
     logfileDirectory = module.params['logfileDirectory']
     logfile = logfileDirectory + '/' + hostname + '--post-stage-log.log'
-
+    config = dict(hostname=hostname,
+                  username=module.params['username'],
+                  password=module.params['password'],
+                  lofile=logfile)
     results = dict(changed=False, failed=True)
+
     try:
         # Telnet to device:
-        child = spawn('telnet ' + hostname)
-        child.logfile = open(logfile, 'w')
-        child.expect('.*ogin Name:.*')
-        child.sendline(username)
-        child.expect('.*assword:.*')
-        child.sendline(password)
-        child.expect('.*#.*')
-        logging.info('Logged into ' + hostname + ', executing crypto key generate')
+        brcd_switch = login(**config)
     except EOF, err:
         msg = "EOF error -- unable to connect to {}".format(module.params['host'])
         results['msg'] = msg
@@ -89,18 +95,18 @@ def brocade_generate_ssh_key(module):
     else:
         # we are now logged in, can run a command now
         # Enter config mode and generate crypto key, then exit config mode:
-        child.sendline('config t')
-        child.expect('.*\(config\).*')
-        child.sendline('crypto key zeroize')
-        child.expect('.*\(config\).*')
-        child.sendline('crypto key generate')
-        child.expect('(.*Key pair is successfully create.*)|(.*ey already exist.*)')
-        child.expect('.*(config).*')
-        child.sendline('end')
-        child.expect('.*#.*')
+        brcd_switch.sendline('config t')
+        brcd_switch.expect('.*\(config\).*')
+        brcd_switch.sendline('crypto key zeroize')
+        brcd_switch.expect('.*\(config\).*')
+        brcd_switch.sendline('crypto key generate')
+        brcd_switch.expect('(.*Key pair is successfully create.*)|(.*ey already exist.*)')
+        brcd_switch.expect('.*(config).*')
+        brcd_switch.sendline('end')
+        brcd_switch.expect('.*#.*')
         sleep(5)
         logging.info('Crypto key generated, now copying over bootrom...')
-        child.sendline('logout')
+        brcd_switch.sendline('logout')
         sleep(5)
 
         # if we get here, all work completed successfully, mark as Changed
@@ -108,7 +114,7 @@ def brocade_generate_ssh_key(module):
         results['failed'] = False
         return results
     finally:
-        child.close()
+        brcd_switch.close()
 
 
 def main():
