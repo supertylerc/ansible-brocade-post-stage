@@ -11,8 +11,6 @@ author: Will McLendon
 '''
 
 
-import os
-import errno
 import logging
 from pexpect import spawn
 from time import sleep
@@ -51,16 +49,6 @@ EXAMPLES = '''
          password="{{ password }}"
          logfileDirectory="{{ logfileDirectory }}"
 '''
-
-
-def createDir(d):
-    try:
-        os.makedirs(d)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST and os.path.isdir(d):
-            pass
-        else:
-            raise
 
 
 def brocade_generate_ssh_key(module):
