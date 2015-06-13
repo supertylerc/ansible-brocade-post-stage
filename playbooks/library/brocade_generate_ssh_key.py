@@ -46,8 +46,13 @@ EXAMPLES = '''
 '''
 
 import logging
-from pexpect import spawn
 from time import sleep
+
+try:
+    from pexpect import spawn
+    MEETS_IMPORT_REQUIREMENTS = True
+except ImportError:
+    MEETS_IMPORT_REQUIREMENTS = False
 
 
 def login(**config):
@@ -122,6 +127,10 @@ def main():
                            username=dict(required=True),
                            password=dict(required=True),
                            logfileDirectory=dict(required=True)))
+
+    if not MEETS_IMPORT_REQUIREMENTS:
+        module.fail_json(msg='pexpect is required for this module.')
+        return
 
     logging.info("Connecting to switch: {}".format(module.params['host']))
     results = brocade_generate_ssh_key(module)
