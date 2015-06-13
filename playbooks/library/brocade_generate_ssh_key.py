@@ -60,6 +60,7 @@ def login(**config):
     username = config.get('username')
     password = config.get('password')
     logfile = config.get('logfile')
+    logging.info("Connecting to switch: {}".format(hostname))
     brcd_switch = spawn('telnet ' + hostname)
     brcd_switch.logfile = open(logfile, 'w')
     brcd_switch.expect('.*ogin Name:.*')
@@ -85,17 +86,17 @@ def brocade_generate_ssh_key(module):
         # Telnet to device:
         brcd_switch = login(**config)
     except EOF, err:
-        msg = "EOF error -- unable to connect to {}".format(module.params['host'])
+        msg = "EOF error -- unable to connect to {}".format(hostname)
         results['msg'] = msg
-        logging.info('EOF Error on {}'.format(module.params['host']))
+        logging.info('EOF Error on {}'.format(hostname))
         logging.info(err)
-        module.fail_json(msg='ERROR -- Unable to connect to {}'.format(module.params['host']))
+        module.fail_json(msg='ERROR -- Unable to connect to {}'.format(hostname))
     except TIMEOUT, err:
-        msg = "TIMEOUT error -- did not get expected values returned on {}".format(module.params['host'])
+        msg = "TIMEOUT error -- did not get expected values returned on {}".format(hostname)
         results['msg'] = msg
-        logging.info('TIMEOUT Error on {}'.format(module.params['host']))
+        logging.info('TIMEOUT Error on {}'.format(hostname))
         logging.info(err)
-        module.fail_json(msg='ERROR - Did not get expected values returned on {}'.format(module.params['host']))
+        module.fail_json(msg='ERROR - Did not get expected values returned on {}'.format(hostname))
     else:
         # we are now logged in, can run a command now
         # Enter config mode and generate crypto key, then exit config mode:
@@ -132,7 +133,6 @@ def main():
         module.fail_json(msg='pexpect is required for this module.')
         return
 
-    logging.info("Connecting to switch: {}".format(module.params['host']))
     results = brocade_generate_ssh_key(module)
 
     module.exit_json(**results)
