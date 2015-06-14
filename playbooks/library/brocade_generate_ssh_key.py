@@ -1,6 +1,5 @@
 #!/usr/bin/env python2
 
-
 DOCUMENTATION = '''
 ---
 module: brocade_generate_ssh_key
@@ -73,6 +72,22 @@ def login(**config):
     return brcd_switch
 
 
+def configure_ssh_key(session):
+    session.sendline('config t')
+    session.expect('.*\(config\).*')
+    session.sendline('crypto key zeroize')
+    session.expect('.*\(config\).*')
+    session.sendline('crypto key generate')
+    session.expect('(.*Key pair is successfully create.*)|(.*ey already exist.*)')
+    session.expect('.*(config).*')
+    session.sendline('end')
+    session.expect('.*#.*')
+    sleep(5)
+    logging.info('Crypto key generated, now copying over bootrom...')
+    session.sendline('logout')
+    sleep(5)
+
+
 def brocade_generate_ssh_key(module):
     hostname = module.params['host']
     logfileDirectory = module.params['logfileDirectory']
@@ -104,19 +119,7 @@ def brocade_generate_ssh_key(module):
     else:
         # we are now logged in, can run a command now
         # Enter config mode and generate crypto key, then exit config mode:
-        brcd_switch.sendline('config t')
-        brcd_switch.expect('.*\(config\).*')
-        brcd_switch.sendline('crypto key zeroize')
-        brcd_switch.expect('.*\(config\).*')
-        brcd_switch.sendline('crypto key generate')
-        brcd_switch.expect('(.*Key pair is successfully create.*)|(.*ey already exist.*)')
-        brcd_switch.expect('.*(config).*')
-        brcd_switch.sendline('end')
-        brcd_switch.expect('.*#.*')
-        sleep(5)
-        logging.info('Crypto key generated, now copying over bootrom...')
-        brcd_switch.sendline('logout')
-        sleep(5)
+        configure_ssh_key(brcd_switch)
 
         # if we get here, all work completed successfully, mark as Changed
         results['changed'] = True
