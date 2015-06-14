@@ -83,7 +83,7 @@ def brocade_generate_ssh_key(module):
     config = dict(hostname=hostname,
                   username=module.params['username'],
                   password=module.params['password'],
-                  lofile=logfile)
+                  logfile=logfile)
     results = dict(changed=False, failed=True)
 
     try:
