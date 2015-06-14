@@ -62,7 +62,8 @@ def login(**config):
     logfile = config.get('logfile')
     logging.info("Connecting to switch: {}".format(hostname))
     brcd_switch = spawn('telnet ' + hostname)
-    brcd_switch.logfile = open(logfile, 'w')
+    if logfile is not None:
+        brcd_switch.logfile = open(logfile, 'w')
     brcd_switch.expect('.*ogin Name:.*')
     brcd_switch.sendline(username)
     brcd_switch.expect('.*assword:.*')
@@ -75,7 +76,10 @@ def login(**config):
 def brocade_generate_ssh_key(module):
     hostname = module.params['host']
     logfileDirectory = module.params['logfileDirectory']
-    logfile = logfileDirectory + '/' + hostname + '--post-stage-log.log'
+    if logfileDirectory is not None:
+        logfile = logfileDirectory + '/' + hostname + '--post-stage-log.log'
+    else:
+        logfile = None
     config = dict(hostname=hostname,
                   username=module.params['username'],
                   password=module.params['password'],
@@ -127,7 +131,7 @@ def main():
         argument_spec=dict(host=dict(required=True),
                            username=dict(required=True),
                            password=dict(required=True),
-                           logfileDirectory=dict(required=True)))
+                           logfileDirectory=dict(required=False, default=None)))
 
     if not MEETS_IMPORT_REQUIREMENTS:
         module.fail_json(msg='pexpect is required for this module.')
